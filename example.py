@@ -7,7 +7,7 @@ client = lifx.Lifx()
 # Turn on the LIFX bulbs
 client.set_power_state(lifx.Power.ON)
 
-# Set the LIFX bulb colour: hue, brightness, saturation, kelvin, transition_duration
+# Set the LIFX bulb colour: hue, saturation, brightness, kelvin, transition_duration
 client.set_light_colour(30000, 30000, 30000, 1000, 5000)
 
 # Get the LIFX bulb colour

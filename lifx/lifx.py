@@ -23,8 +23,8 @@ class Lifx:
             return (lifx.Power.ON == payload.onoff if lifx.Power.ON else lifx.Power.OFF) 
         return None
 
-    def set_light_colour(self, hue, brightness, saturation, kelvin, duration):
-        self.network.send(PacketType.SET_LIGHT_COLOUR, 0, hue, brightness, saturation, kelvin, duration)
+    def set_light_colour(self, hue, saturation, brightness, kelvin, duration):
+        self.network.send(PacketType.SET_LIGHT_COLOUR, 0, hue, saturation, brightness, kelvin, duration)
 
     def get_light_colour(self):
         self.network.send(PacketType.GET_LIGHT_STATE)
