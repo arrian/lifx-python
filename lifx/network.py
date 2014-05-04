@@ -52,7 +52,7 @@ class Network:
         print('Found light at %s' % (address[0],))
 
         tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tcp_socket.settimeout(2.0)
+        tcp_socket.settimeout(1)
         tcp_socket.connect(address)
         tcp_socket.setblocking(0)
         self.site = header.site
