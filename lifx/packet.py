@@ -17,11 +17,11 @@ class Packet:
         self.header_bytes = header_bytes
         self.payload_bytes = payload_bytes
 
+    def __str__(self):
+        return(self.packet_type.text + '\n' + str(self.get_data()))
+
     @classmethod
     def ToBulb(cls, packet_type, site, *payload_data):
-
-        print(packet_type)
-
         payload_bytes = b""
         if payload_data is not None and packet_type.fmt is not None:
             payload_bytes = pack(packet_type.fmt, *payload_data)
@@ -49,8 +49,9 @@ class Packet:
 
         packet_type = None
         for item in PacketType:
-            if item.code is header_data.code:
+            if item.code == header_data.code:
                 packet_type = item
+                break
 
         if packet_type is None:
             raise Exception('No packet type defined.')

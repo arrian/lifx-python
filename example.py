@@ -1,36 +1,38 @@
 import time
 import lifx
 
-# Print a LIFX packet
-def print_packet(packet):
-    print()
-    if packet is not None:
-        print(packet.packet_type.text)
-        print(packet.get_data())
-    else:
-        print("Packet could not be parsed.")
+# Create the LIFX client
+client = lifx.Lifx()
+
+# Turn on the LIFX bulbs
+client.set_power_state(lifx.Power.ON)
+
+# Set the LIFX bulb colour: hue, brightness, saturation, kelvin, transition_duration
+client.set_light_colour(30000, 30000, 30000, 1000, 5000)
+
+# Get the LIFX bulb colour
+print(client.get_light_colour())
+
+# Get the LIFX bulb label
+print(client.get_bulb_label())
+
+# Get the bulb internal time
+print(client.get_time())
+
+# Show wifi information
+print(client.get_wifi_info())
+
+# Show one available access point
+print(client.get_access_points())
 
 
+# Asynchronous print all LIFX network packets and continue
+client.monitor()
 
-# Create the LIFX connection
-network = lifx.Network()
-
-# Listen to all LIFX packets, printing the packet when received
-network.listen(print_packet)
-
-# Turn on the LIFX bulb
-network.send(lifx.PacketType.SET_POWER_STATE, lifx.Power.ON)
-
-# Set the colour of the bulb
-network.send(lifx.PacketType.SET_LIGHT_COLOUR, 0, 30000, 30000, 30000, 1000, 0)
-
-# Request bulb state
-network.send(lifx.PacketType.GET_LIGHT_STATE)
-
-# keep listen running
 while(True): 
     time.sleep(1)
 
 thread.join()
+
 
 

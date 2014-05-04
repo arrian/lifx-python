@@ -32,7 +32,7 @@ class Network:
         p = Packet.ToBulb(PacketType.GET_PAN_GATEWAY, self.site, None)
         udp_socket.sendto(bytes(p.get_bytes()), (self.broadcast, self.port))
         
-        for x in range(5):
+        for x in range(10):
             try:
                 udp_socket.settimeout(1)
                 data, address = udp_socket.recvfrom(2048)
@@ -70,14 +70,32 @@ class Network:
             return Packet.FromBulb(data)
         return None
 
-    # async method to list to packets. recv_func is called when packet received.
-    def listen(self, recv_func):
+    # asynchronous method to call recv_func whenever a packet is received.
+    def listen_async(self, recv_func, packet_filter = None, max_packets = None):
         self.check_connection()
 
         def perform_recv(val):
-            while(True):
+            packet_count = 0
+            while max_packets is None or packet_count < max_packets:
                 packet = self.receive()
-                recv_func(packet)
+                if packet_filter is None or packet_filter.code is packet.packet_type.code:
+                    recv_func(packet)
+                packet_count += 1
 
         thread = Thread(target = perform_recv, args = (10, ))
         thread.start()
+
+    # synchronous method to get the first of the specified packets
+    def listen_sync(self, packet_filter, max_packets = None):
+        self.check_connection()
+
+        packet_count = 0
+        while max_packets is None or packet_count < max_packets:
+            packet = self.receive()
+            if packet is not None and packet.packet_type.code is packet_filter.code:
+                return packet
+            packet_count += 1
+        return None
+
+
+
