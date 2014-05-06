@@ -1,4 +1,4 @@
-import time
+from time import sleep
 import lifx
 
 # Create the LIFX client
@@ -25,11 +25,9 @@ print(client.get_wifi_info())
 # Show one available access point
 print(client.get_access_points())
 
+# Asynchronous print all LIFX network packets and continue. 
+# Pass any function here that takes a one packet type argument.
+client.monitor(lambda packet: print('Packet could not be parsed.\n') if packet is None else print(str(packet) + '\n'))
 
-# Asynchronous print all LIFX network packets and continue
-client.monitor()
-
-thread.join()
-
-
-
+while True:
+	sleep(1)

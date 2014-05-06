@@ -87,17 +87,9 @@ class Lifx:
     def get_network(self):
         return network 
 
-    # Monitors and prints all packets
-    def monitor(self):
-
-        def print_packet(packet):
-            print()
-            if packet is not None:
-                print(packet)
-            else:
-                print("Packet could not be parsed.")
-
-        self.network.listen_async(print_packet)
+    # Monitors packets calling func when packet received
+    def monitor(self, func):
+        self.network.listen_async(func)
 
 
 
