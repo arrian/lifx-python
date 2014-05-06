@@ -36,3 +36,19 @@ class Waveform:
     HALF_SINE = 2
     TRIANGLE = 3
     PULSE = 4
+
+class Colour:
+    RED = 0
+    ORANGE = 5000
+    YELLOW = 8000
+    GREEN = 18000
+    BLUE = 42720
+
+class Brightness:
+    OFF = 0
+    DIM = 1000
+    MOOD = 2500
+    NORMAL = 6000
+    FULL = 65000
+
+

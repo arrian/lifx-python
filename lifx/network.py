@@ -14,6 +14,8 @@ class Network:
     broadcast = '255.255.255.255'
     ip = '0.0.0.0'
     site = bytearray(6)
+    receive_size = 2048
+    timeout = 1
 
     def __init(self):
         self.connect()
@@ -25,17 +27,17 @@ class Network:
             raise Exception('Failed to connect.')
 
     def connect(self):
-        udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        udp_socket.bind((self.ip, self.port))
+        udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        udp.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        udp.bind((self.ip, self.port))
 
         p = Packet.ToBulb(PacketType.GET_PAN_GATEWAY, self.site, None)
-        udp_socket.sendto(bytes(p.get_bytes()), (self.broadcast, self.port))
+        udp.sendto(bytes(p.get_bytes()), (self.broadcast, self.port))
         
         for x in range(10):
             try:
-                udp_socket.settimeout(1)
-                data, address = udp_socket.recvfrom(2048)
+                udp.settimeout(self.timeout)
+                data, address = udp.recvfrom(self.receive_size)
                 packet = Packet.FromBulb(data)
                 if packet is not None:
                     header,payload = packet.get_data()
@@ -43,20 +45,26 @@ class Network:
                     if header.code is PacketType.PAN_GATEWAY.code:
                         break
             except socket.timeout:
-                pass
-        udp_socket.close()
+                raise Exception('Handshake timed out.')
+        udp.close()
+        udp = None
         if header.code is not PacketType.PAN_GATEWAY.code:
             connection = None
             return
 
         print('Found light at %s' % (address[0],))
 
-        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tcp_socket.settimeout(1)
-        tcp_socket.connect(address)
-        tcp_socket.setblocking(0)
+        tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp.settimeout(self.timeout)
+        tcp.connect(address)
+        tcp.setblocking(0)
         self.site = header.site
-        self.connection = tcp_socket
+        self.connection = tcp
+
+    def disconnect(self):
+        if self.connection is not None:
+            self.connection.close()
+            self.connection = None
 
     def send(self, packet_type, *data):
         self.check_connection()
@@ -66,7 +74,7 @@ class Network:
         self.check_connection()
         ready = select.select([self.connection], [], [], 2)
         if ready[0]:
-            data = self.connection.recv(2048)
+            data = self.connection.recv(self.receive_size)
             return Packet.FromBulb(data)
         return None
 
@@ -96,6 +104,4 @@ class Network:
                 return packet
             packet_count += 1
         return None
-
-
 

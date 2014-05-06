@@ -12,6 +12,12 @@ class Lifx:
     def __init__(self):
         pass
 
+    def on(self):
+        self.set_power_state(Power.ON)
+
+    def off(self):
+        self.set_power_state(Power.OFF)
+
     def set_power_state(self, state):
         self.network.send(PacketType.SET_POWER_STATE, state)
 
