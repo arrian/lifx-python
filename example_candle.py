@@ -2,10 +2,10 @@ from time import sleep
 import random
 import lifx
 
-client = lifx.Lifx()
-client.set_power_state(lifx.Power.ON)
+lights = lifx.Lifx()
+lights.on()
 
 while True:
-	client.set_light_colour(random.randint(7000, 7500), 40000, random.randint(2200, 3000), 1000, random.randint(80, 180))
+	lights.set_colour(random.randint(7000, 7500), 40000, random.randint(2200, 3000), 1000, random.randint(80, 180))
 	sleep(random.random() / 2)
 

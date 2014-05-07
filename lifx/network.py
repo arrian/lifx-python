@@ -4,8 +4,7 @@ from time import time, sleep
 import select
 from threading import Thread
 
-from lifx.packet import Packet
-from lifx.packet_type import PacketType
+from lifx.packet import *
 
 
 class Network:
@@ -86,7 +85,7 @@ class Network:
             packet_count = 0
             while max_packets is None or packet_count < max_packets:
                 packet = self.receive()
-                if packet_filter is None or packet_filter.code is packet.packet_type.code:
+                if packet is not None and (packet_filter is None or packet_filter.code is packet.packet_type.code):
                     recv_func(packet)
                 packet_count += 1
 
@@ -104,4 +103,6 @@ class Network:
                 return packet
             packet_count += 1
         return None
+
+
 

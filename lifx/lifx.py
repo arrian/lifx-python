@@ -1,6 +1,5 @@
 from lifx.enums import *
-from lifx.packet import Packet
-from lifx.packet_type import PacketType
+from lifx.packet import *
 from lifx.network import Network
 from lifx.light import Light
 
@@ -13,26 +12,26 @@ class Lifx:
         pass
 
     def on(self):
-        self.set_power_state(Power.ON)
+        self.set_on(True)
 
     def off(self):
-        self.set_power_state(Power.OFF)
+        self.set_on(False)
 
-    def set_power_state(self, state):
-        self.network.send(PacketType.SET_POWER_STATE, state)
+    def set_on(self, on):
+        self.network.send(PacketType.SET_POWER_STATE, Power.ON if on else Power.OFF)
 
-    def get_power_state(self):
+    def is_on(self):
         self.network.send(PacketType.GET_POWER_STATE)
         header, payload = self.network.listen_sync(PacketType.POWER_STATE, 100).get_data()
 
         if payload is not None:
-            return (lifx.Power.ON == payload.onoff if lifx.Power.ON else lifx.Power.OFF) 
+            return payload.onoff 
         return None
 
-    def set_light_colour(self, hue, saturation, brightness, kelvin, duration):
+    def set_colour(self, hue, saturation = 30000, brightness = 30000, kelvin = 1000, duration = 500):
         self.network.send(PacketType.SET_LIGHT_COLOUR, 0, hue, saturation, brightness, kelvin, duration)
 
-    def get_light_colour(self):
+    def get_colours(self):
         self.network.send(PacketType.GET_LIGHT_STATE)
         header, payload = self.network.listen_sync(PacketType.LIGHT_STATUS, 100).get_data()
 
@@ -48,7 +47,7 @@ class Lifx:
             return payload.signal, payload.tx, payload.rx, payload.mcu_temperature 
         return None, None, None, None
 
-    def get_bulb_label(self):
+    def get_labels(self):
         self.network.send(PacketType.GET_BULB_LABEL)
         header, payload = self.network.listen_sync(PacketType.BULB_LABEL, 100).get_data()
 

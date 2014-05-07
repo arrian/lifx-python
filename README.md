@@ -6,37 +6,42 @@ This project aims to be a simple to use comprehensive python library for interac
 
  ```python
 
-import time
+from time import sleep
 import lifx
 
-# Create the LIFX client
-client = lifx.Lifx()
+# Create the LIFX connection
+lights = lifx.Lifx()
 
-# Turn on the LIFX bulbs
-client.on()
+# Turn on the lights
+lights.on()
 
-# Set the LIFX bulb colour: hue, saturation, brightness, kelvin, transition_duration
-client.set_light_colour(lifx.Colour.GREEN, 30000, 30000, 1000, 5000)
+# Set all the lights to green
+lights.set_colour(lifx.Colour.GREEN)
 
-# Get the LIFX bulb colour
-print(client.get_light_colour())
+# You can also be more specific with your colour settings: hue, saturation, brightness, kelvin, transition_duration
+lights.set_colour(0, 10000, 10000, 1000, 5000)
 
-# Get the LIFX bulb label
-print(client.get_bulb_label())
+# Get the lights' colours
+print(lights.get_colours())
 
-# Get the bulb internal time
-print(client.get_time())
+# Get the lights' labels
+print(lights.get_labels())
 
-# Show wifi information
-print(client.get_wifi_info())
+# Get the lights' internal time
+print(lights.get_time())
 
-# Show one available access point
-print(client.get_access_points())
+# Get the wifi information
+print(lights.get_wifi_info())
 
+# Get the available access points
+print(lights.get_access_points())
 
-# Asynchronous print all LIFX network packets and continue
-client.monitor(print)
+# Asynchronous print all LIFX network packets and continue.
+# Pass any function here that takes a one packet type argument.
+lights.monitor(lambda packet: print('Packet could not be parsed.\n') if packet is None else print(str(packet) + '\n'))
 
-thread.join()
+while True:
+	sleep(1)
+
 
  ```
