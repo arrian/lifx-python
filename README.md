@@ -1,6 +1,6 @@
 # LIFX Python Library
 
-This project aims to be a simple to use comprehensive python library for interaction with LIFX lightbulbs.
+This project aims to be a simple to use comprehensive python library for interaction with LIFX lightbulbs. Currently both Python 2 and Python 3 are supported.
 
 ## Usage
 
@@ -37,11 +37,10 @@ print(lights.get_wifi_info())
 print(lights.get_access_points())
 
 # Asynchronous print all LIFX network packets and continue.
-# Pass any function here that takes a one packet type argument.
-lights.monitor(lambda packet: print('Packet could not be parsed.\n') if packet is None else print(str(packet) + '\n'))
+# Pass any function here that takes one argument.
+lights.monitor(lights.print_packet)
 
 while True:
 	sleep(1)
-
 
  ```
