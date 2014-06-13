@@ -1,3 +1,4 @@
+import sys
 from collections import namedtuple
 from struct import pack, unpack, calcsize
 
@@ -116,7 +117,16 @@ class Packet:
         if payload_data is not None and packet_type.fmt is not None:
             payload_bytes = pack(packet_type.fmt, *payload_data)
 
-        header_data = (cls.header_size + len(payload_bytes), cls.protocol, 0, bytearray(8), site, 0, 0, packet_type.code, 0)
+
+        # Some version specfic stuff to handle the fact that python 2 pack takes
+        # strings whereas python 3 pack takes bytearrays.
+        target_vs = bytearray(8)
+        site_vs = site
+        if sys.version_info < (3, 0):
+            target_vs = str(target_vs)
+            site_vs = str(site_vs)
+
+        header_data = (cls.header_size + len(payload_bytes), cls.protocol, 0, target_vs, site_vs, 0, 0, packet_type.code, 0)
         header_bytes = pack(cls.header_fmt, *header_data)
         return cls(packet_type, header_data, payload_data, header_bytes, payload_bytes)
 

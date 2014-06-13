@@ -1,7 +1,7 @@
-from lifx.enums import *
-from lifx.packet import *
-from lifx.network import Network
-from lifx.light import Light
+from .enums import *
+from .packet import *
+from .network import Network
+from .light import Light
 
 # Wraps network providing a simpler API.
 class Lifx:
@@ -90,7 +90,10 @@ class Lifx:
     def monitor(self, func):
         self.network.listen_async(func)
 
-
-
+    def print_packet(self, packet):
+        if packet is None:
+            print('Packet could not be parsed.\n')
+        else:
+            print(str(packet) + '\n')
 
 

@@ -30,7 +30,7 @@ print(lights.get_access_points())
 
 # Asynchronous print all LIFX network packets and continue.
 # Pass any function here that takes a one packet type argument.
-lights.monitor(lambda packet: print('Packet could not be parsed.\n') if packet is None else print(str(packet) + '\n'))
+lights.monitor(lights.print_packet)
 
 while True:
 	sleep(1)

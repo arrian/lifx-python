@@ -4,7 +4,7 @@ from time import time, sleep
 import select
 from threading import Thread
 
-from lifx.packet import *
+from .packet import *
 
 
 class Network:
