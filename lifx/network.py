@@ -112,18 +112,18 @@ class Network:
         thread.start()
 
     # synchronous method to get the first of the specified packets
-    def listen_sync(self, packet_filter, max_packets = None, num_packets = None, timeout = None):
+    def listen_sync(self, packet_filter, max_packets = None, num_packets = None, timeout = 4):
         self.check_connection()
 
         packet_count = 0
-        start_time = time.time()
+        start_time = time()
 
         while max_packets is None or packet_count < max_packets:
             packet = self.receive()
             if packet is not None and packet.packet_type.code is packet_filter.code:
                 return packet
             packet_count += 1
-            if timeout is not None and time.time() > start_time + timeout:
+            if timeout is not None and time() > start_time + timeout:
                 break 
         return None
 
