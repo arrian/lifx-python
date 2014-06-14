@@ -64,7 +64,7 @@ class Network:
         try:
             tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             tcp.settimeout(self.timeout)
-            tcp.connect((self.address[0], 57601))#self.address)
+            tcp.connect(self.address)
             tcp.setblocking(0)
             self.connection = tcp
             print('Using tcp')
@@ -88,9 +88,9 @@ class Network:
         else:
             self.connection.sendall(packet)
 
-    def receive(self):
+    def receive(self, timeout = 1):
         self.check_connection()
-        ready = select.select([self.connection], [], [], 2)
+        ready = select.select([self.connection], [], [], timeout)
         if ready[0]:
             data = self.connection.recv(self.receive_size)
             return Packet.FromBulb(data)
@@ -112,15 +112,19 @@ class Network:
         thread.start()
 
     # synchronous method to get the first of the specified packets
-    def listen_sync(self, packet_filter, max_packets = None):
+    def listen_sync(self, packet_filter, max_packets = None, num_packets = None, timeout = None):
         self.check_connection()
 
         packet_count = 0
+        start_time = time.time()
+
         while max_packets is None or packet_count < max_packets:
             packet = self.receive()
             if packet is not None and packet.packet_type.code is packet_filter.code:
                 return packet
             packet_count += 1
+            if timeout is not None and time.time() > start_time + timeout:
+                break 
         return None
 
 
