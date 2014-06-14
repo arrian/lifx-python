@@ -6,18 +6,27 @@ from threading import Thread
 
 from .packet import *
 
+# handle tcp not supported
+import errno
+from socket import error as socket_error
+
 
 class Network:
     connection = None
     port = 56700
     broadcast = '255.255.255.255'
     ip = '0.0.0.0'
+    target = bytearray(6)
     site = bytearray(6)
     receive_size = 2048
     timeout = 1
+    address = None
 
     def __init(self):
         self.connect()
+
+    def to_mac(self, addr):
+        return ':'.join('%02x' % b for b in addr)
 
     def check_connection(self):
         if self.connection is None:
@@ -30,35 +39,40 @@ class Network:
         udp.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         udp.bind((self.ip, self.port))
 
-        p = Packet.ToBulb(PacketType.GET_PAN_GATEWAY, self.site, None)
+        p = Packet.ToBulb(PacketType.GET_PAN_GATEWAY, self.target, self.site, None)
         udp.sendto(bytes(p.get_bytes()), (self.broadcast, self.port))
         
         for x in range(10):
             try:
                 udp.settimeout(self.timeout)
-                data, address = udp.recvfrom(self.receive_size)
+                data, self.address = udp.recvfrom(self.receive_size)
                 packet = Packet.FromBulb(data)
                 if packet is not None:
                     header,payload = packet.get_data()
-
                     if header.code is PacketType.PAN_GATEWAY.code:
                         break
             except socket.timeout:
                 raise Exception('Handshake timed out.')
-        udp.close()
-        udp = None
+
         if header.code is not PacketType.PAN_GATEWAY.code:
             connection = None
-            return
+            raise Exception('Connection failed. Could not determine the gateway.')
 
-        print('Found light at %s' % (address[0],))
+        print('Found light at %s:%s' % (self.address[0],self.address[1]))
 
-        tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tcp.settimeout(self.timeout)
-        tcp.connect(address)
-        tcp.setblocking(0)
         self.site = header.site
-        self.connection = tcp
+        try:
+            tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcp.settimeout(self.timeout)
+            tcp.connect((self.address[0], 57601))#self.address)
+            tcp.setblocking(0)
+            self.connection = tcp
+            print('Using tcp')
+        except socket_error as serr:
+            if serr.errno != errno.ECONNREFUSED:
+                raise serr
+            self.connection = udp # latest versions of firmware >= 1.2 do not support tcp? fall back to udp
+            print('Using udp')
 
     def disconnect(self):
         if self.connection is not None:
@@ -67,7 +81,12 @@ class Network:
 
     def send(self, packet_type, *data):
         self.check_connection()
-        self.connection.sendall(Packet.ToBulb(packet_type, self.site, *data).get_bytes())
+        packet = Packet.ToBulb(packet_type, self.target, self.site, *data).get_bytes()
+
+        if self.connection.type is socket.SOCK_DGRAM:
+            self.connection.sendto(packet, self.address)
+        else:
+            self.connection.sendall(packet)
 
     def receive(self):
         self.check_connection()

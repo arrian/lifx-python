@@ -96,10 +96,14 @@ class PacketCode:
 
 class Packet:
 
-    header = 'size protocol reserved1 target site acknowledge timestamp code reserved2' # payload follows. need to fix later: protocol={12 bits protocol, 1 bit addressable, 1 bit tagged, 2 bits reserved}, acknowledge={1 bit acknowledge, 15 bits reserved}
-    header_fmt = '<HHI8s6sHQHH'
+    # payload follows. need to fix later: protocol={12 bits protocol, 
+    # 1 bit addressable, 1 bit tagged, 2 bits reserved}, acknowledge
+    # ={1 bit acknowledge, 15 bits reserved}
+    header = 'size protocol reserved1 target reserved2 site acknowledge timestamp code reserved3' 
+    
+    header_fmt = '<HHI6sH6sHQHH'
     header_size = 36
-    protocol = 0x3400 # 0x5400
+    protocol = 0x3400 # 0x5400 = bulb protocol
 
     def __init__(self, packet_type, header_data, payload_data, header_bytes, payload_bytes):
         self.packet_type = packet_type
@@ -112,7 +116,7 @@ class Packet:
         return(self.packet_type.text + '\n' + str(self.get_data()))
 
     @classmethod
-    def ToBulb(cls, packet_type, site, *payload_data):
+    def ToBulb(cls, packet_type, target, site, *payload_data):
         payload_bytes = b""
         if payload_data is not None and packet_type.fmt is not None:
             payload_bytes = pack(packet_type.fmt, *payload_data)
@@ -120,13 +124,13 @@ class Packet:
 
         # Some version specfic stuff to handle the fact that python 2 pack takes
         # strings whereas python 3 pack takes bytearrays.
-        target_vs = bytearray(8)
+        target_vs = target
         site_vs = site
         if sys.version_info < (3, 0):
             target_vs = str(target_vs)
             site_vs = str(site_vs)
 
-        header_data = (cls.header_size + len(payload_bytes), cls.protocol, 0, target_vs, site_vs, 0, 0, packet_type.code, 0)
+        header_data = (cls.header_size + len(payload_bytes), cls.protocol, 0, target_vs, 0, site_vs, 0, 0, packet_type.code, 0)
         header_bytes = pack(cls.header_fmt, *header_data)
         return cls(packet_type, header_data, payload_data, header_bytes, payload_bytes)
 
