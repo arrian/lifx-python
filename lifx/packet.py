@@ -104,6 +104,7 @@ class Packet:
     header_fmt = '<HHI6sH6sHQHH'
     header_size = 36
     protocol = 0x3400 # 0x5400 = bulb protocol
+    protocol_bulb = 0x5400
 
     def __init__(self, packet_type, header_data, payload_data, header_bytes, payload_bytes):
         self.packet_type = packet_type
@@ -114,6 +115,12 @@ class Packet:
 
     def __str__(self):
         return(self.packet_type.text + '\n' + str(self.get_data()))
+
+    @classmethod
+    def AsBulb(cls, packet_type, address, site, *payload_data):
+        packet = Packet.ToBulb(packet_type, address, site, *payload_data)
+        packet.protocol = packet.protocol_bulb # the bulb uses a different protocol value
+        return packet
 
     @classmethod
     def ToBulb(cls, packet_type, target, site, *payload_data):

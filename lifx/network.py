@@ -14,16 +14,17 @@ from socket import error as socket_error
 class Network:
     connection = None
     port = 56700
-    broadcast = '255.255.255.255'
     ip = '0.0.0.0'
+    broadcast_ip = '255.255.255.255'
     target = bytearray(6)
     site = bytearray(6)
     receive_size = 2048
     timeout = 1
     address = None
 
-    def __init(self):
-        self.connect()
+    def __init__(self, connect = True):
+        if connect:
+            self.connect()
 
     def to_mac(self, addr):
         return ':'.join('%02x' % b for b in addr)
@@ -38,9 +39,10 @@ class Network:
         udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         udp.bind((self.ip, self.port))
+        print(udp.getsockname())
 
         p = Packet.ToBulb(PacketType.GET_PAN_GATEWAY, self.target, self.site, None)
-        udp.sendto(bytes(p.get_bytes()), (self.broadcast, self.port))
+        udp.sendto(bytes(p.get_bytes()), (self.broadcast_ip, self.port))
         
         for x in range(10):
             try:
@@ -96,6 +98,13 @@ class Network:
             return Packet.FromBulb(data)
         return None
 
+    def broadcast(self, packet):
+        broadcast_connection = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        broadcast_connection.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        broadcast_connection.bind((self.ip, 0))
+        broadcast_connection.sendto(bytes(packet.get_bytes()), (self.broadcast_ip, self.port))
+        broadcast_connection.close()
+
     # asynchronous method to call recv_func whenever a packet is received.
     def listen_async(self, recv_func, packet_filter = None, max_packets = None):
         self.check_connection()
@@ -111,21 +120,27 @@ class Network:
         thread = Thread(target = perform_recv, args = (10, ))
         thread.start()
 
-    # synchronous method to get the first of the specified packets
-    def listen_sync(self, packet_filter, max_packets = None, num_packets = None, timeout = 4):
+    # Synchronous method to get the first of the specified packets.
+    # Packet filter is a single packet code or a list of packet codes.
+    def listen_sync(self, packet_filter, num_packets = 1, timeout = 2):
         self.check_connection()
-
-        packet_count = 0
         start_time = time()
 
-        while max_packets is None or packet_count < max_packets:
+        packets = []
+
+        while True:
             packet = self.receive()
-            if packet is not None and packet.packet_type.code is packet_filter.code:
-                return packet
-            packet_count += 1
+            if packet is not None and (packet.packet_type.code is packet_filter.code or (isinstance(packet_filter, list) and packet.packet_type.code in packet_filter)):
+                if num_packets == 1:
+                    return packet
+                else:
+                    packets.append(packet)
+
             if timeout is not None and time() > start_time + timeout:
-                break 
-        return None
+                break
+        if num_packets == 1:
+            return None
+        return packets
 
 
 

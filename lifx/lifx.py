@@ -6,10 +6,10 @@ from .light import Light
 # Wraps network providing a simpler API.
 class Lifx:
 
-    network = Network()
+    network = None
 
     def __init__(self):
-        pass
+        self.network = Network()
 
     def on(self):
         self.set_on(True)
@@ -22,7 +22,7 @@ class Lifx:
 
     def is_on(self):
         self.network.send(PacketType.GET_POWER_STATE)
-        header, payload = self.network.listen_sync(PacketType.POWER_STATE, 100).get_data()
+        header, payload = self.network.listen_sync(PacketType.POWER_STATE, 1).get_data()
 
         if payload is not None:
             return payload.onoff 
@@ -33,7 +33,7 @@ class Lifx:
 
     def get_colours(self):
         self.network.send(PacketType.GET_LIGHT_STATE)
-        header, payload = self.network.listen_sync(PacketType.LIGHT_STATUS, 100).get_data()
+        header, payload = self.network.listen_sync(PacketType.LIGHT_STATUS, 1).get_data()
 
         if payload is not None:
             return payload.hue, payload.saturation, payload.brightness, payload.kelvin, payload.dim, payload.power, payload.build_label, payload.tags
@@ -41,7 +41,7 @@ class Lifx:
 
     def get_wifi_info(self):
         self.network.send(PacketType.GET_WIFI_INFO)
-        header, payload = self.network.listen_sync(PacketType.WIFI_INFO, 100).get_data()
+        header, payload = self.network.listen_sync(PacketType.WIFI_INFO, 1).get_data()
 
         if payload is not None:
             return payload.signal, payload.tx, payload.rx, payload.mcu_temperature 
@@ -49,23 +49,26 @@ class Lifx:
 
     def get_labels(self):
         self.network.send(PacketType.GET_BULB_LABEL)
-        header, payload = self.network.listen_sync(PacketType.BULB_LABEL, 100).get_data()
-
-        if payload is not None:
-            return payload.label.decode("utf-8")
+        packets = map(Packet.get_data, self.network.listen_sync(PacketType.BULB_LABEL, 10))
+        
+        print(" ".join(map(str,[p[1].label.decode("utf-8") for p in packets])))
+        #if payload is not None:
+        #    pass
+            #return payload.label.decode("utf-8")
         return None
 
     def get_access_points(self):
         self.network.send(PacketType.GET_ACCESS_POINTS)
-        header, payload = self.network.listen_sync(PacketType.ACCESS_POINT, 100).get_data()
-
-        if payload is not None:
-            return payload.interface, payload.ssid.split(b'\0',1)[0].decode("utf-8"), payload.security_protocol, payload.strength, payload.channel
-        return None, None, None, None, None
+        packets = map(Packet.get_data, self.network.listen_sync(PacketType.ACCESS_POINT, 10))
+        print(" ".join(map(str,[p[1].ssid.split(b'\0',1)[0].decode("utf-8") for p in packets])))
+        #if payload is not None:
+        #    pass
+            #return payload.interface, payload.ssid.split(b'\0',1)[0].decode("utf-8"), payload.security_protocol, payload.strength, payload.channel
+        return [(None, None, None, None, None)]
 
     def get_time(self):
         self.network.send(PacketType.GET_TIME)
-        header, payload = self.network.listen_sync(PacketType.TIME_STATE, 100).get_data()
+        header, payload = self.network.listen_sync(PacketType.TIME_STATE, 1).get_data()
 
         if payload is not None:
             return payload.time / 1000000000
@@ -73,11 +76,17 @@ class Lifx:
 
     def get_version(self):
         self.network.send(PacketType.GET_VERSION)
-        header, payload = self.network.listen_sync(PacketType.VERSION_STATE, 100).get_data()
+        header, payload = self.network.listen_sync(PacketType.VERSION_STATE, 1).get_data()
 
         if payload is not None:
             return payload.vendor, payload.product, payload.version
         return None, None, None
+
+    def get_lights_by_tag(self, tag):
+        pass
+
+    def get_light_by_name(self, name):
+        pass
 
     def reboot(self):
         self.network.send(PacketType.REBOOT)
