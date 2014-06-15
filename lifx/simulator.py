@@ -2,14 +2,17 @@ from .packet import *
 from .network import Network
 import string
 import random
-import queue
 import threading
 import os
 
+try:
+    import queue
+except ImportError:
+    import Queue as queue # backwards compatibility for Python 2
 
 class Simulator:
     """ 
-    Simulates a LIFX bulb locally. Only python3 currently.
+    Simulates a LIFX bulb locally.
     """
     network = None
     broadcast_queue = queue.Queue()
