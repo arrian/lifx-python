@@ -93,7 +93,7 @@ class Lifx:
 
     # Get the wrapped network object to perform lower level calls
     def get_network(self):
-        return network 
+        return self.network
 
     # Monitors packets calling func when packet received
     def monitor(self, func):
