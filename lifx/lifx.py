@@ -1,7 +1,6 @@
 from .enums import *
 from .packet import *
 from .network import Network
-from .light import Light
 
 # Wraps network providing a simpler API.
 class Lifx:
