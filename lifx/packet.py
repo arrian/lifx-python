@@ -2,86 +2,98 @@ import sys
 from collections import namedtuple
 from struct import pack, unpack, calcsize
 
-class PacketTypeDef:
+class PacketDirection:
+    FROM_BULB, TO_BULB = range(2)
 
-    def __init__(self, text, code, payload, fmt):
+class PacketTypeDef(object):
+
+    def __init__(self, text, code, payload, fmt, direction):
         self.text = text
         self.code = code
         self.payload = payload
         self.fmt = fmt
+        self.direction = direction
 
     def __str__(self):
         return("%s Packet - %d" % (self.text, self.code))
 
+class PacketTypeDefFromBulb(PacketTypeDef):
+    def __init__(self, text, code, payload, fmt):
+        super(PacketTypeDefFromBulb, self).__init__(text, code, payload, fmt, PacketDirection.FROM_BULB)
+
+class PacketTypeDefToBulb(PacketTypeDef):
+    def __init__(self, text, code, payload, fmt):
+        super(PacketTypeDefToBulb, self).__init__(text, code, payload, fmt, PacketDirection.TO_BULB)
+
 class PacketType:
 
     # Network
-    GET_PAN_GATEWAY = PacketTypeDef('Get PAN Gateway', 0x02, None, None) #to bulb
-    PAN_GATEWAY = PacketTypeDef('PAN Gateway', 0x03, 'service port', '<bI') #from bulb. note port is little endian
+    GET_PAN_GATEWAY = PacketTypeDefToBulb('Get PAN Gateway', 0x02, None, None)
+    PAN_GATEWAY = PacketTypeDefFromBulb('PAN Gateway', 0x03, 'service port', '<bI') # note port is little endian
 
     # Power
-    GET_POWER_STATE = PacketTypeDef('Get Power State', 0x14, None, None) #to bulb
-    SET_POWER_STATE = PacketTypeDef('Set Power State', 0x15, 'onoff', '<H') #to bulb
-    POWER_STATE = PacketTypeDef('Power State', 0x16, 'onoff', '<H') #from bulb
+    GET_POWER_STATE = PacketTypeDefToBulb('Get Power State', 0x14, None, None)
+    SET_POWER_STATE = PacketTypeDefToBulb('Set Power State', 0x15, 'onoff', '<H')
+    POWER_STATE = PacketTypeDefFromBulb('Power State', 0x16, 'onoff', '<H')
 
     # Wireless
-    GET_WIFI_INFO = PacketTypeDef('Get Wifi Info', 0x10, None, None) # to bulb
-    WIFI_INFO = PacketTypeDef('Wifi Info', 0x11, 'signal tx rx mcu_temperature', '<fiih') # from bulb
-    GET_WIFI_FIRMWARE_STATE = PacketTypeDef('Get Wifi Firmware State', 0x12, None, None) # to bulb
-    WIFI_FIRMWARE_STATE = PacketTypeDef('Wifi Firmware State', 0x13, 'build install version', '<QQI') # from bulb
-    GET_WIFI_STATE = PacketTypeDef('Get Wifi State', 0x12d, 'interface', '<b') # to bulb
-    SET_WIFI_STATE = PacketTypeDef('Set Wifi State', 0x12e, 'interface wifi_state ip4_address ip6_address', '<bb4b16b') # to bulb
-    WIFI_STATE = PacketTypeDef('Wifi State', 0x12f, 'interface wifi_state ip4_address ip6_address', '<bb4b16b') # from bulb
-    GET_ACCESS_POINTS = PacketTypeDef('Get Access Points', 0x130, None, None) # to bulb
-    SET_ACCESS_POINT = PacketTypeDef('Set Access Points', 0x131, 'interface ssid password security_protocol', '<b32s64sb') # to bulb
-    ACCESS_POINT = PacketTypeDef('Accesss Points', 0x132, 'interface ssid security_protocol strength channel', '<b32sbHH') # from bulb
+    GET_WIFI_INFO = PacketTypeDefToBulb('Get Wifi Info', 0x10, None, None)
+    WIFI_INFO = PacketTypeDefFromBulb('Wifi Info', 0x11, 'signal tx rx mcu_temperature', '<fiih')
+    GET_WIFI_FIRMWARE_STATE = PacketTypeDefToBulb('Get Wifi Firmware State', 0x12, None, None)
+    WIFI_FIRMWARE_STATE = PacketTypeDefFromBulb('Wifi Firmware State', 0x13, 'build install version', '<QQI')
+    GET_WIFI_STATE = PacketTypeDefToBulb('Get Wifi State', 0x12d, 'interface', '<b')
+    SET_WIFI_STATE = PacketTypeDefToBulb('Set Wifi State', 0x12e, 'interface wifi_state ip4_address ip6_address', '<bb4b16b')
+    WIFI_STATE = PacketTypeDefFromBulb('Wifi State', 0x12f, 'interface wifi_state ip4_address ip6_address', '<bb4b16b')
+    GET_ACCESS_POINTS = PacketTypeDefToBulb('Get Access Points', 0x130, None, None)
+    SET_ACCESS_POINT = PacketTypeDefToBulb('Set Access Points', 0x131, 'interface ssid password security_protocol', '<b32s64sb')
+    ACCESS_POINT = PacketTypeDefFromBulb('Accesss Points', 0x132, 'interface ssid security_protocol strength channel', '<b32sbHH')
 
     # Labels and Tags
-    GET_BULB_LABEL = PacketTypeDef('Get Bulb Label', 0x17, None, None) #to bulb
-    SET_BULB_LABEL = PacketTypeDef('Set Bulb Label', 0x18, 'label', '<32s') #to bulb
-    BULB_LABEL = PacketTypeDef('Bulb Label', 0x19, 'label', '<32s') #from bulb
-    GET_TAGS = PacketTypeDef('Get Tags', 0x1a, None, None) #to bulb
-    SET_TAGS = PacketTypeDef('Set Tags', 0x1b, 'tags', '<Q') #to bulb
-    TAGS = PacketTypeDef('Tags', 0x1c, 'tags', 'Q') #from bulb
-    GET_TAG_LABELS = PacketTypeDef('Get Tag Labels', 0x1d, 'tags', '<Q') #to bulb
-    SET_TAG_LABELS = PacketTypeDef('Set Tag Labels', 0x1e, 'tags label', '<Q32s') #to bulb
-    TAG_LABELS = PacketTypeDef('Tag Labels', 0x1f, 'tags label', '<Q32s') #from bulb
+    GET_BULB_LABEL = PacketTypeDefToBulb('Get Bulb Label', 0x17, None, None)
+    SET_BULB_LABEL = PacketTypeDefToBulb('Set Bulb Label', 0x18, 'label', '<32s')
+    BULB_LABEL = PacketTypeDefFromBulb('Bulb Label', 0x19, 'label', '<32s')
+    GET_TAGS = PacketTypeDefToBulb('Get Tags', 0x1a, None, None)
+    SET_TAGS = PacketTypeDefToBulb('Set Tags', 0x1b, 'tags', '<Q')
+    TAGS = PacketTypeDefFromBulb('Tags', 0x1c, 'tags', 'Q')
+    GET_TAG_LABELS = PacketTypeDefToBulb('Get Tag Labels', 0x1d, 'tags', '<Q')
+    SET_TAG_LABELS = PacketTypeDefToBulb('Set Tag Labels', 0x1e, 'tags label', '<Q32s')
+    TAG_LABELS = PacketTypeDefFromBulb('Tag Labels', 0x1f, 'tags label', '<Q32s')
 
     # Colour
-    GET_LIGHT_STATE = PacketTypeDef('Get Light State', 0x65, None, None) #to bulb
-    SET_LIGHT_COLOUR = PacketTypeDef('Set Light Colour', 0x66, 'stream hue saturation brightness kelvin duration', '<bHHHHI') #to bulb
-    SET_WAVEFORM = PacketTypeDef('Set Waveform', 0x67, 'stream transient hue saturation brightness kelvin period cycles duty_cycles waveform', '<b?HHHHIfHb') #to bulb
-    SET_DIM_ABSOLUTE = PacketTypeDef('Set Dim Absolute', 0x68, 'brightness duration', '<hI') #to bulb
-    SET_DIM_RELATIVE = PacketTypeDef('Set Dim Relative', 0x69, 'brightness duration', '<iI') #to bulb
-    #SET_LIGHT_RGBW = PacketTypeDef('Set Light RGBW', 0x, 'red green blue white', '<HHHH') #to bulb
-    LIGHT_STATUS = PacketTypeDef('Light Status', 0x6b, 'hue saturation brightness kelvin dim power build_label tags', '<HHHHhH32sQ') #from bulb
+    GET_LIGHT_STATE = PacketTypeDefToBulb('Get Light State', 0x65, None, None)
+    SET_LIGHT_COLOUR = PacketTypeDefToBulb('Set Light Colour', 0x66, 'stream hue saturation brightness kelvin duration', '<bHHHHI')
+    SET_WAVEFORM = PacketTypeDefToBulb('Set Waveform', 0x67, 'stream transient hue saturation brightness kelvin period cycles duty_cycles waveform', '<b?HHHHIfHb')
+    SET_DIM_ABSOLUTE = PacketTypeDefToBulb('Set Dim Absolute', 0x68, 'brightness duration', '<hI')
+    SET_DIM_RELATIVE = PacketTypeDefToBulb('Set Dim Relative', 0x69, 'brightness duration', '<iI')
+    #SET_LIGHT_RGBW = PacketTypeDefToBulb('Set Light RGBW', 0x, 'red green blue white', '<HHHH')
+    LIGHT_STATUS = PacketTypeDefFromBulb('Light Status', 0x6b, 'hue saturation brightness kelvin dim power build_label tags', '<HHHHhH32sQ')
 
     # Time
-    GET_TIME = PacketTypeDef('Get Time', 0x04, None, None) #to bulb
-    SET_TIME = PacketTypeDef('Set Time', 0x05, 'time', '<Q') #to bulb. note time is little endian
-    TIME_STATE = PacketTypeDef('Time State', 0x06, 'time', '<Q') #from bulb. note time is little endian
+    GET_TIME = PacketTypeDefToBulb('Get Time', 0x04, None, None)
+    SET_TIME = PacketTypeDefToBulb('Set Time', 0x05, 'time', '<Q') # note time is little endian
+    TIME_STATE = PacketTypeDefFromBulb('Time State', 0x06, 'time', '<Q') # note time is little endian
 
     #Debug
-    GET_RESET_SWITCH = PacketTypeDef('Get Reset Switch', 0x07, None, None) #to bulb
-    RESET_SWITCH_STATE = PacketTypeDef('Reset Switch State', 0x08, 'position', '<H') #from bulb
-    #GET_DUMMY_LOAD = PacketTypeDef('Get Dummy Load', 0x09, '', '') #to bulb
-    #SET_DUMMY_LOAD = PacketTypeDef('Set Dummy Load', 0x0a, '', '') #to bulb
-    #DUMMY_LOAD = PacketTypeDef('Dummy Load', 0x0b, '', '') #from bulb
-    GET_MESH_INFO = PacketTypeDef('Get Mesh Info', 0x0c, None, None) #to bulb
-    MESH_INFO = PacketTypeDef('Mesh Info', 0x0d, 'signal tx rx mcu_temperature', '<fiih') #from bulb. note signal, tx and rx are little endian
-    GET_MESH_FIRMWARE = PacketTypeDef('Get Mesh Firmware', 0x0e, None, None) #to bulb
-    MESH_FIRMWARE_STATE = PacketTypeDef('Mesh Firmware State', 0x0f, 'build install version', '<QQI') #from bulb
-    GET_VERSION = PacketTypeDef('Get Version', 0x20, None, None) #to bulb
-    VERSION_STATE = PacketTypeDef('Version State', 0x21, 'vendor product version', '<III') #from bulb
-    GET_INFO = PacketTypeDef('Get Info', 0x22, None, None) #to bulb
-    INFO = PacketTypeDef('Info', 0x23, 'time uptime downtime', '<QQQ') #from bulb
-    GET_MCU_RAIL_VOLTAGE = PacketTypeDef('Get MCU Rail Voltage', 0x24, None, None) #to bulb
-    MCU_RAIL_VOLTAGE = PacketTypeDef('MCU Rail Voltage', 0x25, 'voltage', '<I') #from bulb
-    REBOOT = PacketTypeDef('Reboot', 0x26, None, None) #to bulb
-    SET_FACTORY_TEST_MODE = PacketTypeDef('Set Factory Test Mode', 0x27, 'on', '<b') #to bulb
-    DISABLE_FACTORY_TEST_MODE = PacketTypeDef('Disable Factory Test Mode', 0x28, None, None) #to bulb
-    #GET_TEMPERATURE = PacketTypeDef('Get Temperature', 0x, None, None) #to bulb
-    #TEMPERATURE = PacketTypeDef('Temperature', 0x, 'temperature', '<h') #to bulb
+    GET_RESET_SWITCH = PacketTypeDefToBulb('Get Reset Switch', 0x07, None, None)
+    RESET_SWITCH_STATE = PacketTypeDefFromBulb('Reset Switch State', 0x08, 'position', '<H')
+    #GET_DUMMY_LOAD = PacketTypeDefToBulb('Get Dummy Load', 0x09, '', '')
+    #SET_DUMMY_LOAD = PacketTypeDefToBulb('Set Dummy Load', 0x0a, '', '')
+    #DUMMY_LOAD = PacketTypeDefFromBulb('Dummy Load', 0x0b, '', '')
+    GET_MESH_INFO = PacketTypeDefToBulb('Get Mesh Info', 0x0c, None, None)
+    MESH_INFO = PacketTypeDefFromBulb('Mesh Info', 0x0d, 'signal tx rx mcu_temperature', '<fiih') # note signal, tx and rx are little endian
+    GET_MESH_FIRMWARE = PacketTypeDefToBulb('Get Mesh Firmware', 0x0e, None, None)
+    MESH_FIRMWARE_STATE = PacketTypeDefFromBulb('Mesh Firmware State', 0x0f, 'build install version', '<QQI')
+    GET_VERSION = PacketTypeDefToBulb('Get Version', 0x20, None, None)
+    VERSION_STATE = PacketTypeDefFromBulb('Version State', 0x21, 'vendor product version', '<III')
+    GET_INFO = PacketTypeDefToBulb('Get Info', 0x22, None, None)
+    INFO = PacketTypeDefFromBulb('Info', 0x23, 'time uptime downtime', '<QQQ')
+    GET_MCU_RAIL_VOLTAGE = PacketTypeDefToBulb('Get MCU Rail Voltage', 0x24, None, None)
+    MCU_RAIL_VOLTAGE = PacketTypeDefFromBulb('MCU Rail Voltage', 0x25, 'voltage', '<I')
+    REBOOT = PacketTypeDefToBulb('Reboot', 0x26, None, None)
+    SET_FACTORY_TEST_MODE = PacketTypeDefToBulb('Set Factory Test Mode', 0x27, 'on', '<b')
+    DISABLE_FACTORY_TEST_MODE = PacketTypeDefToBulb('Disable Factory Test Mode', 0x28, None, None)
+    #GET_TEMPERATURE = PacketTypeDefToBulb('Get Temperature', 0x, None, None)
+    #TEMPERATURE = PacketTypeDefToBulb('Temperature', 0x, 'temperature', '<h')
 
 class PacketCode:
 

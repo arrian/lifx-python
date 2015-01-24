@@ -19,7 +19,7 @@ class Network:
     target = bytearray(6)
     site = bytearray(6)
     receive_size = 2048
-    timeout = 1
+    timeout = 2
     address = None
 
     def __init__(self, connect = True):
